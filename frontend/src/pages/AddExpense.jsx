@@ -78,13 +78,26 @@ const AddExpense = () => {
         }
       }
 
-      await api.post('/expenses', {
+      const expensePayload = {
         description: formData.description,
         amount: parseFloat(formData.amount),
         category: formData.category,
         group_id: formData.group_id || null,
         splits: formData.group_id ? splits : []
-      });
+      };
+
+      if (!navigator.onLine) {
+        const offlineExpenses = JSON.parse(localStorage.getItem('offlineExpenses') || '[]');
+        expensePayload.offlineId = Date.now().toString();
+        expensePayload.date = new Date().toISOString();
+        offlineExpenses.push(expensePayload);
+        localStorage.setItem('offlineExpenses', JSON.stringify(offlineExpenses));
+        alert('You are offline. Expense saved locally and will be synced when internet is restored.');
+        navigate(formData.group_id ? `/groups/${formData.group_id}` : '/');
+        return;
+      }
+
+      await api.post('/expenses', expensePayload);
 
       navigate(formData.group_id ? `/groups/${formData.group_id}` : '/');
     } catch (error) {

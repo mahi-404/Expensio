@@ -1,0 +1,37 @@
+{
+  "name": "Expensio - Student Expense Tracker",
+  "short_name": "Expensio",
+  "description": "Track and split expenses with your friends easily.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "utilities"],
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "url": "/add-expense",
+      "description": "Quickly add a new expense"
+    },
+    {
+      "name": "Groups",
+      "url": "/groups",
+      "description": "View your expense groups"
+    }
+  ]
+}

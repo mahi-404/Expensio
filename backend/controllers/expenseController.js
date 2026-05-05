@@ -49,11 +49,29 @@ const addExpense = async (req, res) => {
 // @access  Private
 const getExpenses = async (req, res) => {
   try {
-    // Get personal expenses (group_id is null) or expenses paid by user
-    const expenses = await Expense.find({
+    const { category, startDate, endDate } = req.query;
+    
+    // Build query object
+    let query = {
       paid_by: req.user.id,
       group_id: null
-    }).sort({ date: -1 });
+    };
+
+    if (category && category !== 'All') {
+      query.category = category;
+    }
+
+    if (startDate || endDate) {
+      query.date = {};
+      if (startDate) query.date.$gte = new Date(startDate);
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        query.date.$lte = end;
+      }
+    }
+
+    const expenses = await Expense.find(query).sort({ date: -1 });
 
     res.status(200).json(expenses);
   } catch (error) {
@@ -86,6 +104,9 @@ const getGroupExpenses = async (req, res) => {
 // @access  Private
 const getExpenseSummary = async (req, res) => {
   try {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    
     // Basic summary: total amount grouped by category for the user
     const summary = await Expense.aggregate([
       {
@@ -113,9 +134,30 @@ const getExpenseSummary = async (req, res) => {
       }
     ]);
 
+    const currentMonthExpenses = await Expense.aggregate([
+      {
+        $match: { 
+          paid_by: req.user._id,
+          date: { $gte: startOfMonth }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: '$amount' }
+        }
+      }
+    ]);
+
+    // Get user to return their budget
+    const User = require('../models/User');
+    const user = await User.findById(req.user._id);
+
     res.status(200).json({
       categorySummary: summary,
-      totalAmount: total.length > 0 ? total[0].totalAmount : 0
+      totalAmount: total.length > 0 ? total[0].totalAmount : 0,
+      currentMonthTotal: currentMonthExpenses.length > 0 ? currentMonthExpenses[0].totalAmount : 0,
+      budget: user.monthly_budget || 0
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
